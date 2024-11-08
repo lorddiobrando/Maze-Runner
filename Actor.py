@@ -1,19 +1,27 @@
-from pyamaze import agent,COLOR
+from pyamaze import agent,COLOR,maze
 class Actor:
-    def __init__(self,mz,initial_state,func=None,Color=COLOR.blue):
+    def __init__(self,mz,initial_state,Color=COLOR.blue):
         self.State=initial_state
-        self.TransFunc=func
         self.theGUI=agent(mz,color=Color)
-    
-    def draw(self,state): self.theGUI.position=state
+        self.Move=['E','W','N','S']
+        self.HMove=[1,-1,0,0]
+        self.VMove=[0,0,1,-1]
+        self.Blocked=self.mz.maze_map
 
-    def SetTransition(self,func):
-        self.TransFunc=func
+    def draw(self): self.theGUI.position=self.State
+    def NowState(self,state):self.State=state
+    def Actions(self):
+        NewMoves=[]
+        for i in range(4):
+            NewMove=(self.State[0]+self.HMove[i],self.State[1]+self.VMove[i])
+            if self.Blocked[NewMove][self.Move[i]]:
+                NewMoves.append(NewMove)
+        return NewMoves
 
-    def Transition(self):
-        if(not self.TransFunc): 
-            print("ERROR: Set your function first please :)")
-            exit()
-        self.TransFunc()
+
+
+
+
+
 
 
