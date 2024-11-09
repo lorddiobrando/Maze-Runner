@@ -13,8 +13,8 @@ class Actor:
     def Actions(self):
         NewMoves=[]
         for i in range(4):
-            NewMove=(self.State[0]+self.HMove[i],self.State[1]+self.VMove[i])
-            if self.Blocked[NewMove][self.Move[i]]:
+            if self.Blocked[self.State][self.Move[i]]:
+                NewMove=(self.State[0]+self.HMove[i],self.State[1]+self.VMove[i])
                 NewMoves.append(NewMove)
         return NewMoves
 
