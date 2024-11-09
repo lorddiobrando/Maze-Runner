@@ -73,9 +73,16 @@ class Maze:
         self.InitialiseAgent(self.Agent.State,Cost[self.Agent.State[X]][self.Agent.State[Y]]) # Initialize cost of first node into priority queue
         self.Grid[self.Agent.State[X]][self.Agent.State[Y]]=0
         while self.AgentQueue:
+            self.FireSpread()
             CurrState,CurrCost=heappop(self.AgentQueue)
             if CurrCost>=self.Grid[CurrState[X]][CurrState[Y]]: continue
-            
+            self.Agent.NowState(CurrState)
+            self.Agent.draw()
+            for state in self.Agent.Actions():
+                if Cost[state[X]][state[Y]]+self.Grid[CurrState[X]][CurrState[Y]]>=self.Grid[state[X]][state[Y]]: continue
+                self.Grid[state[X]][state[Y]]=Cost[state[X]][state[Y]]+self.Grid[CurrState[X]][CurrState[Y]]
+                heappush(self.AgentQueue,(state,self.Grid[state[X]][state[Y]]))
+
 
         
         
