@@ -1,11 +1,14 @@
 from Actor import * 
 from pyamaze import maze,COLOR
 from collections import deque
+from heapq import heappop,heappush
 import sys
 oo=sys.maxsize
 UNVISITED=oo
 VISITED=1
 FIRE=-oo
+X=0
+Y=1
 
 class Maze:
 
@@ -17,14 +20,15 @@ class Maze:
         self.Functions={}
         self.Goal=GoalState
         self.FireQueue=deque()
-        self.ActorQueue=deque()
+        self.AgentQueue=deque()
 
-    def  InitialiseActor(self,state):
+    def  InitialiseAgent(self,state,cost=None):
         if(not bool(self.ActorQueue)): # Check if empty. If not empty, means initialised before
             print("Error: ActorQueue already initialised :)")
             exit()
-        self.Actor.theGUI.position=state
-        self.ActorQueue.append(state)
+        self.Agent.theGUI.position=state
+        if cost:self.AgentQueue.append((state,cost)) 
+        else:self.AgentQueue.append(state)
 
     def  InitialiseFire(self,state):
         if(not bool(self.FireQueue)): # Check if empty. If not empty, means initialised before
@@ -66,6 +70,15 @@ class Maze:
         if(not Cost):
             print("ERROR: Chose UCS Search with no Cost Inserted :)")
             exit()
+        self.InitialiseAgent(self.Agent.State,Cost[self.Agent.State[X]][self.Agent.State[Y]]) # Initialize cost of first node into priority queue
+        self.Grid[self.Agent.State[X]][self.Agent.State[Y]]=0
+        while self.AgentQueue:
+            CurrState,CurrCost=heappop(self.AgentQueue)
+            if CurrCost>=self.Grid[CurrState[X]][CurrState[Y]]: continue
+            
+
+        
+        
         
 
 
