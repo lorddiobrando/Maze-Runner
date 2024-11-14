@@ -1,6 +1,6 @@
 from Actor import *
 from Maze import *
 
-env=Maze(5,5,(1,2))
+env=Maze(4,4,(2,1))
 
-env.LessGo('UCS',[[i for i in range(51)]]*51)
+env.Start('UCS',[[i for i in range(5)]]*5)

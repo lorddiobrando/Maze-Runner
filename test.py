@@ -1,5 +1,5 @@
 from pyamaze import *
-mz=maze(5,5)
+mz=maze(200,200)
 mz._goal=(4,4)
 mz.CreateMaze(loopPercent=100) # creating the maze
 a=agent(mz,2,3,footprints=True,color=COLOR.red) # creating an agent with its initial location, and whether to leave a footprint or not
