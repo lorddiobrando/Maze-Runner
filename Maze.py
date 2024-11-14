@@ -3,10 +3,10 @@ from pyamaze import maze,COLOR
 from collections import deque
 from heapq import heappop,heappush
 import sys
+
 oo=sys.maxsize
 UNVISITED=oo
 VISITED=1
-FIRE=-oo
 X=0
 Y=1
 
@@ -21,13 +21,14 @@ class Maze:
 
         self.Grid=[[UNVISITED for i in range(width+1)] for j in range(height+1)]
         self.Functions={
-            'UCS':self.UCS
+            'UCS':self.UCS,
+            'BFS':self.BFS
         }
 
     def SearchFunction(self,Key,Cost=None):
         self.Functions[Key.upper()](Cost)
 
-    def Start(self,Key,CostGrid):
+    def Start(self,Key,CostGrid = None):
         if(not self.Goal or not self.Agent.State):
             print("ERROR: Set all your States first :)")
             exit()
@@ -47,9 +48,8 @@ class Maze:
         self.Grid[self.Agent.State[X]][self.Agent.State[Y]]=0
         while Queue:
             CurrCost,CurrState=heappop(Queue)
-            if CurrCost>self.Grid[CurrState[X]][CurrState[Y]] or CurrCost==FIRE: continue
+            if CurrCost>self.Grid[CurrState[X]][CurrState[Y]]: continue
             self.Agent.NowState(CurrState)
-            self.Agent.draw()
             for state in self.Agent.Actions():
                 if CostGrid[state[X]][state[Y]]+self.Grid[CurrState[X]][CurrState[Y]]>=self.Grid[state[X]][state[Y]]: continue
                 self.Grid[state[X]][state[Y]]=CostGrid[state[X]][state[Y]]+self.Grid[CurrState[X]][CurrState[Y]]
@@ -58,6 +58,39 @@ class Maze:
         else:
             print("Path cost is ", self.Grid[self.Goal[X]][self.Goal[Y]])
             
+    def BFS(self, CostGrid=None):
+        Queue=deque()
+        Queue.append(self.Agent.State)
+        self.Grid[self.Agent.State[X]][self.Agent.State[Y]]=0
+        parent = {self.Agent.State: None}
+        path = []
+        explored = []
+
+        while Queue:
+            CurrState=Queue.popleft()
+            self.Agent.NowState(CurrState)
+            explored.append(CurrState)
+            if CurrState == self.Goal:
+                break
+            for state in self.Agent.Actions():
+                if self.Grid[state[X]][state[Y]]==UNVISITED:
+                    self.Grid[state[X]][state[Y]]=self.Grid[CurrState[X]][CurrState[Y]]+1
+                    parent[state] = CurrState
+                    Queue.append(state)
+
+        if self.Grid[self.Goal[X]][self.Goal[Y]]==UNVISITED:
+            print("No Path to Goal :(")
+        else:
+            print("Path Length is ", self.Grid[self.Goal[X]][self.Goal[Y]])
+            step = self.Goal
+            while step is not None:
+                path.append(step)
+                step = parent[step]
+            path.reverse()
+            print("Path is ", path)
+            print("Explored nodes are ", explored)
+
+
 
 
         
