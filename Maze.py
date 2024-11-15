@@ -22,10 +22,7 @@ class Maze:
         self.Agent=Actor(self.theMaze,ActorState)
         self.PathAgent = agent(self.theMaze, ActorState[0], ActorState[1], footprints = True, filled=True, color = 'red')
         self.ExploredAgent = agent(self.theMaze, ActorState[0], ActorState[1], footprints = True, filled=True, color = 'green')
-
         self.Size=(width,height)
-        
-
         self.Grid=[[UNVISITED for i in range(width+1)] for j in range(height+1)]
         
         self.Functions={
@@ -34,7 +31,8 @@ class Maze:
             'IDS':self.IDS,
             'DFS':self.DFS,
             'GREEDY':self.Greedy,
-            'SA':self.SimulatedAnnealing
+            'SA':self.SimulatedAnnealing,
+            'ASTAR':self.AStar
         }
 
         self.HFunctions={
@@ -55,8 +53,9 @@ class Maze:
             return path
 
     def SearchFunction(self,Key,Cost=None,HKey=None, SchedKey=None, Temp=None):
-        if Cost: self.Functions[Key.upper()](Cost)
-        elif HKey and not SchedKey: self.Functions[Key.upper()](HKey)
+        if Cost and not HKey: self.Functions[Key.upper()](Cost)
+        elif HKey and not SchedKey and not Cost: self.Functions[Key.upper()](HKey)
+        elif HKey and Cost: self.Functions[Key.upper()](Cost,HKey)
         elif SchedKey: self.Functions[Key.upper()](Temp,HKey,SchedKey)
         else: self.Functions[Key.upper()]()
 
@@ -70,8 +69,9 @@ class Maze:
         if(not self.Goal or not self.Agent.State):
             print("ERROR: Set all your States first :)")
             exit()
-        if CostGrid:self.SearchFunction(Key,CostGrid)
-        elif HKey and not SchedKey: self.SearchFunction(Key,HKey=HKey)
+        if CostGrid and not HKey:self.SearchFunction(Key,CostGrid)
+        elif HKey and not SchedKey and not CostGrid: self.SearchFunction(Key,HKey=HKey)
+        elif HKey and CostGrid: self.SearchFunction(Key,HKey=HKey,Cost=CostGrid)
         elif SchedKey: self.SearchFunction(Key,HKey = HKey,SchedKey=SchedKey, Temp=Temp)
         else:self.SearchFunction(Key)
         self.theMaze.run()
@@ -86,7 +86,7 @@ class Maze:
                 CostGrid.append(row)
             return CostGrid 
     
-# Schedueling Functions Here
+   # Schedueling Functions Here
     def Linear(self,Temp):
         return max(0.01, min(1, 1 - 0.001 * Temp))
 
@@ -117,18 +117,16 @@ class Maze:
             print("No Path to Goal :(")
         else:
             print("Path Length is ", self.Grid[self.Goal[X]][self.Goal[Y]])
-            step = self.Goal
-            while step is not None:
-                path.append(step)
-                step = parent[step]
-            path.reverse()
-            print("Path is ", path)
+            print("Path is ", self.Path(parent))
             print("Explored nodes are ", explored)
+            self.theMaze.tracePath({ self.ExploredAgent: explored}, delay = 10)
+            self.theMaze.tracePath({ self.PathAgent: self.Path(parent)}, delay = 10)
 
     def IDS(self):
+        print("Begin IDS")
         max_depth = min(10000, len(self.Grid) * len(self.Grid[0]))
         for i in range(max_depth):
-            print(i)
+            print('Iteration number:', i)
             result = self.__DepthLimitedSearch(i)
             if result != 'cutoff':
                 print(result)
@@ -141,31 +139,30 @@ class Maze:
     def __DepthLimitedSearch(self, limit):
         initial_state = self.Agent.State
         stack = deque()
-        stack.append((initial_state, 0, None))
-        cycle_size = 3 * limit + 1
-        cycle = [None for i in range(cycle_size)]
-        cycle_index = 0
+        stack.append((initial_state, 0))
+        par = dict()
+        par[initial_state] = None
+        explored = []
         while stack:
-            cur = stack.pop()
-            cycle[cycle_index] = cur
-            cycle_index += 1
-            if cycle_index == cycle_size:
-                cycle_index = 1
-            if cur[0] == self.Goal:
+            curState, curDepth = stack.pop()
+            explored.append(curState)
+
+            if curState == self.Goal:
+                print("Path is ", self.Path(par))
+                print("Explored nodes are ", explored)
+                self.theMaze.tracePath({ self.ExploredAgent: explored}, delay = 10)
+                self.theMaze.tracePath({ self.PathAgent: self.Path(par)}, delay = 10)
                 return 'success'
-            if cur[1] >= limit:
+            
+            
+            if curDepth >= limit:
                 pass
             else:
-                actions = self.Agent.Actions(cur[0])
+                actions = self.Agent.Actions(curState)
                 for state in actions:
-                    flag = False
-                    for tup in cycle:
-                        if tup and state == tup[0]:  # checking for cycles
-                            flag = True
-                            break
-                    if flag:
-                        continue
-                    stack.append((state, cur[1] + 1, cur[0]))
+                    if state not in explored:
+                        stack.append((state, curDepth + 1))
+                        par[state] = curState
         return 'cutoff'
 
     def UCS(self,CostGrid=None):
@@ -193,6 +190,10 @@ class Maze:
             print("Path is ", self.Path(parent))
             self.theMaze.tracePath({ self.ExploredAgent: explored}, delay = 10)
             self.theMaze.tracePath({ self.PathAgent: self.Path(parent)}, delay = 10)
+
+    def AStar(self,CostGrid,HKey):
+        pass
+        
 
     def BFS(self):
         Queue=deque()
@@ -232,7 +233,7 @@ class Maze:
         Parent = {self.Agent.State: None}
         CostGrid = self.HeuristicFunction(Hkey)
         CurrValue = CostGrid[CurrState[X]][CurrState[Y]]
-        Explored = set()
+        Explored = []
         T = 0
         while True:
             T += 1
@@ -250,13 +251,14 @@ class Maze:
                     CurrState = NextState
                     CurrValue = NextValue
                     if CurrState not in Explored:
-                        Explored.add(CurrState)
+                        Explored.append(CurrState)
                     self.Agent.NowState(CurrState)
                     break
         if CurrState == self.Goal:
             print("Path is ", self.Path(Parent))
-            self.theMaze.tracePath({ self.ExploredAgent: Explored}, delay = 10)
-            self.theMaze.tracePath({ self.PathAgent: self.Path(Parent)}, delay = 10)
+            print("Explored nodes are ", Explored)
+            self.theMaze.tracePath({ self.ExploredAgent: list(Explored)}, delay = 10)
+            self.theMaze.tracePath({ self.PathAgent : self.Path(Parent)}, delay = 10)
         else:
             print("No Path to Goal :(")
 
