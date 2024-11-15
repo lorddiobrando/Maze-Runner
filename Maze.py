@@ -30,31 +30,32 @@ class Maze:
     def __DepthLimitedSearch(self, limit):
         initial_state = self.Agent.State
         stack = deque()
-        stack.append((initial_state, 0, None))
-        cycle_size = 3 * limit + 1
-        cycle = [None for i in range(cycle_size)]
-        cycle_index = 0
+        stack.append((initial_state, 0))
+        par = dict()
+        par[initial_state] = None
+        explored = []
         while stack:
-            cur = stack.pop()
-            cycle[cycle_index] = cur
-            cycle_index += 1
-            if cycle_index == cycle_size:
-                cycle_index = 1
-            if cur[0] == self.Goal:
+            curState, curDepth = stack.pop()
+            explored.append(curState)
+
+            if curState == self.Goal:
+                path = []
+                step = self.Goal
+                while step is not None:
+                    path.append(step)
+                    step = par[step]
+                path.reverse()
+                print("Path is ", path)
+                print("Explored nodes are ", explored)
                 return 'success'
-            if cur[1] >= limit:
+            if curDepth >= limit:
                 pass
             else:
-                actions = self.Agent.Actions(cur[0])
+                actions = self.Agent.Actions(curState)
                 for state in actions:
-                    flag = False
-                    for tup in cycle:
-                        if tup and state == tup[0]:  # checking for cycles
-                            flag = True
-                            break
-                    if flag:
-                        continue
-                    stack.append((state, cur[1] + 1, cur[0]))
+                    if state not in explored:
+                        stack.append((state, curDepth + 1))
+                        par[state] = curState
         return 'cutoff'
 
     def SearchFunction(self,Key,Cost=None):
@@ -69,7 +70,7 @@ class Maze:
             exit()
         self.Agent.theGUI.footprints=True
         self.SearchFunction(Key,CostGrid)
-        # self.theMaze.run()
+        self.theMaze.run()
 
 #--------------------------------------------------------------------------
 # Enter your Search Algorithms here
@@ -166,9 +167,10 @@ class Maze:
 
 
     def IDS(self):
+        print("Begin IDS")
         max_depth = min(10000, len(self.Grid) * len(self.Grid[0]))
         for i in range(max_depth):
-            print(i)
+            print('Iteration number:', i)
             result = self.__DepthLimitedSearch(i)
             if result != 'cutoff':
                 print(result)
