@@ -8,13 +8,7 @@ class Actor:
         self.VMove=[0,0,-1,1]
         self.Blocked=mz.maze_map
 
-    def draw(self,Color=None):
-        if(Color):
-            self.theGUI.position=self.State
-        else:
-            self.GoalGui=agent()
-
-    def NowState(self, state):self.State=state
+    def NowState(self,state):self.State=state
     def Actions(self, state):
         NewMoves=[]
         for i in range(4):
