@@ -30,7 +30,7 @@ class Maze:
             'UCS':self.UCS,
             'BFS':self.BFS,
             'GREEDY':self.Greedy,
-            'SA':self.SA
+            'SA':self.SimulatedAnnealing
         }
 
         self.HFunctions={
@@ -145,7 +145,7 @@ class Maze:
         print(CostGrid)
         self.SearchFunction('UCS',CostGrid)
 
-    def SA(self, Temp, Hkey, SchedKey):
+    def SimulatedAnnealing(self, Temp, Hkey, SchedKey):
         CurrState = self.Agent.State
         Parent = {self.Agent.State: None}
         CostGrid = self.HeuristicFunction(Hkey)
