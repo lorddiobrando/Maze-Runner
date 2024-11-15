@@ -92,6 +92,46 @@ class Maze:
 
 
 
+    def DFS(self, CostGrid=None):
+    Stack = [(self.Agent.State, 0)] 
+    self.Grid[self.Agent.State[X]][self.Agent.State[Y]] = 0  
+    parent = {self.Agent.State: None}  
+    path = []
+    explored = []
+    print("Begin DFS")
+
+    while Stack:
+        CurrState, CurrDepth = Stack.pop() 
+        if CurrState in explored:  
+            continue
+        explored.append(CurrState)
+
+        if CurrState == self.Goal:
+            break
+        self.Agent.NowState(CurrState)
+
+        for state in self.Agent.Actions():
+            if self.Grid[state[X]][state[Y]] == UNVISITED:
+                self.Grid[state[X]][state[Y]] = CurrDepth + 1 
+                parent[state] = CurrState  
+                Stack.append((state, CurrDepth + 1))
+
+    if self.Grid[self.Goal[X]][self.Goal[Y]] == UNVISITED:
+        print("No Path to Goal :(")
+    else:
+        print("Path Length is ", self.Grid[self.Goal[X]][self.Goal[Y]])
+        
+        step = self.Goal
+        while step is not None:
+            path.append(step)
+            step = parent[step]
+        path.reverse()
+        print("Path is ", path)
+        print("Explored nodes are ", explored)
+
+
+
+
 
         
         
