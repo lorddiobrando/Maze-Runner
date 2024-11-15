@@ -9,11 +9,11 @@ class Actor:
         self.Blocked=mz.maze_map
 
     def NowState(self,state):self.State=state
-    def Actions(self):
+    def Actions(self, state):
         NewMoves=[]
         for i in range(4):
-            if self.Blocked[self.State][self.Move[i]]:
-                NewMove=(self.State[0]+self.VMove[i],self.State[1]+self.HMove[i])
+            if self.Blocked[state][self.Move[i]]:
+                NewMove=(state[0]+self.VMove[i], state[1]+self.HMove[i])
                 NewMoves.append(NewMove)
         return NewMoves
 
