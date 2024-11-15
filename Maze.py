@@ -23,7 +23,8 @@ class Maze:
         self.Functions={
             'UCS':self.UCS,
             'BFS':self.BFS,
-            'IDS':self.IDS
+            'IDS':self.IDS,
+            'DFS':self.DFS
         }
 
     def __DepthLimitedSearch(self, limit):
@@ -84,7 +85,7 @@ class Maze:
             CurrCost,CurrState=heappop(Queue)
             if CurrCost>self.Grid[CurrState[X]][CurrState[Y]]: continue
             self.Agent.NowState(CurrState)
-            for state in self.Agent.Actions():
+            for state in self.Agent.Actions(CurrState):
                 if CostGrid[state[X]][state[Y]]+self.Grid[CurrState[X]][CurrState[Y]]>=self.Grid[state[X]][state[Y]]: continue
                 self.Grid[state[X]][state[Y]]=CostGrid[state[X]][state[Y]]+self.Grid[CurrState[X]][CurrState[Y]]
                 heappush(Queue,(self.Grid[state[X]][state[Y]],state))
@@ -106,7 +107,7 @@ class Maze:
             explored.append(CurrState)
             if CurrState == self.Goal:
                 break
-            for state in self.Agent.Actions():
+            for state in self.Agent.Actions(CurrState):
                 if self.Grid[state[X]][state[Y]]==UNVISITED:
                     self.Grid[state[X]][state[Y]]=self.Grid[CurrState[X]][CurrState[Y]]+1
                     parent[state] = CurrState
@@ -144,7 +145,7 @@ class Maze:
                 break
             self.Agent.NowState(CurrState)
 
-            for state in self.Agent.Actions():
+            for state in self.Agent.Actions(CurrState):
                 if self.Grid[state[X]][state[Y]] == UNVISITED:
                     self.Grid[state[X]][state[Y]] = CurrDepth + 1
                     parent[state] = CurrState
