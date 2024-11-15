@@ -36,7 +36,8 @@ class Maze:
         }
 
         self.HFunctions={
-            'MANHATTEN':self.Manhatten
+            'MANHATTEN':self.Manhatten,
+            'EUCLEDIAN':self.Eucledian
 
         }
         self.SchedFunctions={
@@ -84,6 +85,17 @@ class Maze:
                     row.append(abs(self.Goal[Y]-j)+abs(self.Goal[X]-i))
                 CostGrid.append(row)
             return CostGrid 
+
+    def Eucledian(self):
+            CostGrid=[]
+            for i in range(self.Size[X]+1):
+                row=[]
+                for j in range(self.Size[Y]+1):
+                    row.append(sqrt((self.Goal[Y]-j)**2+abs(self.Goal[X]-i)**2))
+                CostGrid.append(row)
+            return CostGrid 
+
+           
     
 # Schedueling Functions Here
     def Linear(self,Temp):
@@ -220,6 +232,13 @@ class Maze:
         CostGrid=self.HeuristicFunction(HKey)
         print(CostGrid)
         self.SearchFunction('UCS',CostGrid)
+    
+    def AStar(self,CostGrid,HKey):
+        temp=self.HeuristicFunction(HKEY)
+        for i in range(len(CostGrid)):
+            for j in range(len(CostGrid[0])):
+                CostGrid[i][j]+=temp[i][j]
+        self.UCS(CostGrid)
 
     def SimulatedAnnealing(self, Temp, Hkey, SchedKey):
         CurrState = self.Agent.State
