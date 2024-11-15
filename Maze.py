@@ -1,8 +1,10 @@
 from Actor import * 
-from pyamaze import maze,COLOR
+from pyamaze import maze
 from collections import deque
 from heapq import heappop,heappush
 import sys
+import random
+import math
 
 oo=sys.maxsize
 UNVISITED=oo
@@ -27,12 +29,16 @@ class Maze:
         self.Functions={
             'UCS':self.UCS,
             'BFS':self.BFS,
-            'GREEDY':self.Greedy
+            'GREEDY':self.Greedy,
+            'SA':self.SA
         }
 
         self.HFunctions={
             'MANHATTEN':self.Manhatten
 
+        }
+        self.SchedFunctions={
+            'LINEAR':self.Linear
         }
 
     def Path(self,Parent):
@@ -44,21 +50,26 @@ class Maze:
             path.reverse()
             return path
 
-    def SearchFunction(self,Key,Cost=None,HKey=None):
+    def SearchFunction(self,Key,Cost=None,HKey=None, SchedKey=None, Temp=None):
         if Cost: self.Functions[Key.upper()](Cost)
-        elif HKey: self.Functions[Key.upper()](HKey)
+        elif HKey and not SchedKey: self.Functions[Key.upper()](HKey)
+        elif SchedKey: self.Functions[Key.upper()](Temp,HKey,SchedKey)
         else: self.Functions[Key.upper()]()
 
     def HeuristicFunction(self,Key):
         return self.HFunctions[Key.upper()]()
     
-    def Start(self,Key,CostGrid = None,HKey=None):
+    def ScheduleFunction(self,Key,Temp):
+        return self.SchedFunctions[Key.upper()](Temp)
+    
+    def Start(self,Key,CostGrid = None,HKey=None,SchedKey=None, Temp= None):
         if(not self.Goal or not self.Agent.State):
             print("ERROR: Set all your States first :)")
             exit()
         self.Agent.theGUI.footprints=True
         if CostGrid:self.SearchFunction(Key,CostGrid)
-        elif HKey: self.SearchFunction(Key,HKey=HKey)
+        elif HKey and not SchedKey: self.SearchFunction(Key,HKey=HKey)
+        elif SchedKey: self.SearchFunction(Key,HKey = HKey,SchedKey=SchedKey, Temp=Temp)
         else:self.SearchFunction(Key)
         self.theMaze.run()
 
@@ -71,7 +82,10 @@ class Maze:
                     row.append(abs(self.Goal[Y]-j)+abs(self.Goal[X]-i))
                 CostGrid.append(row)
             return CostGrid 
-
+    
+# Schedueling Functions Here
+    def Linear(self,Temp):
+        return max(0.01, min(1, 1 - 0.001 * Temp))
 
 
 
@@ -79,7 +93,6 @@ class Maze:
 
     def UCS(self,CostGrid=None):
         parent = {self.Agent.State: None}
-        path = []
         Queue=[(0,self.Agent.State)]
         print("Begin")
         if(not CostGrid):
@@ -101,7 +114,7 @@ class Maze:
             print("Path is ", self.Path(parent))
 
             
-    def BFS(self, CostGrid=None):
+    def BFS(self):
         Queue=deque()
         Queue.append(self.Agent.State)
         self.Grid[self.Agent.State[X]][self.Agent.State[Y]]=0
@@ -132,7 +145,43 @@ class Maze:
         print(CostGrid)
         self.SearchFunction('UCS',CostGrid)
 
+    def SA(self, Temp, Hkey, SchedKey):
+        CurrState = self.Agent.State
+        Parent = {self.Agent.State: None}
+        CostGrid = self.HeuristicFunction(Hkey)
+        CurrValue = CostGrid[CurrState[X]][CurrState[Y]]
+        Explored = set()
+        T = 0
+        while True:
+            T += 1
+            Temp = self.ScheduleFunction(SchedKey, T)
+            if CurrState == self.Goal or Temp <= 0.01:
+                break
+            PossibleStates = self.Agent.Actions()
+            while True: 
+                NextState = random.choice(PossibleStates)
+                NextValue = CostGrid[NextState[X]][NextState[Y]]
+                Delta = CurrValue - NextValue
+                if Delta > 0 or random.random() < math.exp(-Delta / Temp):
+                    if NextState not in Parent:
+                         Parent[NextState] = CurrState
+                    CurrState = NextState
+                    CurrValue = NextValue
+                    if CurrState not in Explored:
+                        Explored.add(CurrState)
+                    self.Agent.NowState(CurrState)
+                    break
+        if CurrState == self.Goal:
+            print("Path is ", self.Path(Parent))
+        else:
+            print("No Path to Goal :(")
 
+
+        
+
+
+
+        
 
 
 
