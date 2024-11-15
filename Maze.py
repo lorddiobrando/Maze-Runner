@@ -18,7 +18,7 @@ class Maze:
         self.theMaze=maze(height,width)
         if GoalState==None:self.Goal=(height,width)
         else: self.Goal=GoalState
-        self.theMaze.CreateMaze(self.Goal[0],self.Goal[1],loopPercent=50)
+        self.theMaze.CreateMaze(self.Goal[0],self.Goal[1],loopPercent=100)
         self.Agent=Actor(self.theMaze,ActorState)
         self.PathAgent = agent(self.theMaze, ActorState[0], ActorState[1], footprints = True, filled=True, color = 'red')
         self.ExploredAgent = agent(self.theMaze, ActorState[0], ActorState[1], footprints = True, filled=True, color = 'green')
@@ -32,7 +32,8 @@ class Maze:
             'DFS':self.DFS,
             'GREEDY':self.Greedy,
             'SA':self.SimulatedAnnealing,
-            'ASTAR':self.AStar
+            'ASTAR':self.AStar,
+            'HC':self.HillClimbing
         }
 
         self.HFunctions={
@@ -56,7 +57,7 @@ class Maze:
         if Cost and not HKey: self.Functions[Key.upper()](Cost)
         elif HKey and not SchedKey and not Cost: self.Functions[Key.upper()](HKey)
         elif HKey and Cost: self.Functions[Key.upper()](Cost,HKey)
-        elif SchedKey: self.Functions[Key.upper()](Temp,HKey,SchedKey)
+        elif SchedKey: self.Functions[Key.upper()](HKey,SchedKey)
         else: self.Functions[Key.upper()]()
 
     def HeuristicFunction(self,Key):
@@ -124,7 +125,7 @@ class Maze:
 
     def IDS(self):
         print("Begin IDS")
-        max_depth = min(10000, len(self.Grid) * len(self.Grid[0]))
+        max_depth = min(10000, len(self.Grid) + len(self.Grid[0]))
         for i in range(max_depth):
             print('Iteration number:', i)
             result = self.__DepthLimitedSearch(i)
@@ -228,7 +229,7 @@ class Maze:
         print(CostGrid)
         self.SearchFunction('UCS',CostGrid)
 
-    def SimulatedAnnealing(self, Temp, Hkey, SchedKey):
+    def SimulatedAnnealing(self, Hkey, SchedKey, Temp = None):
         CurrState = self.Agent.State
         Parent = {self.Agent.State: None}
         CostGrid = self.HeuristicFunction(Hkey)
@@ -260,9 +261,30 @@ class Maze:
             self.theMaze.tracePath({ self.ExploredAgent: list(Explored)}, delay = 10)
             self.theMaze.tracePath({ self.PathAgent : self.Path(Parent)}, delay = 10)
         else:
+            self.theMaze.tracePath({self.ExploredAgent: list(Explored)}, delay=10)
             print("No Path to Goal :(")
 
+    def __NodalHeuristic(self, state):
+        # Manhatten distance
+        dist = abs(state[0] - self.Goal[0]) + abs(state[1] - self.Goal[1])
+        return dist
 
+    def HillClimbing(self):
+        CurrState = self.Agent.State
+        path = list()
+        path.append(CurrState)
+        flag = True
+        while flag:
+            flag = False
+            for state in self.Agent.Actions(CurrState):
+                if self.__NodalHeuristic(state) < self.__NodalHeuristic(CurrState):
+                    flag = True
+                    CurrState = state
+            if flag:
+                path.append(CurrState)
+
+        print("Path is ", path)
+        self.theMaze.tracePath({self.ExploredAgent: path}, delay=10)
         
 
 
@@ -282,4 +304,3 @@ class Maze:
 
 
 
-        
