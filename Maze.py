@@ -12,17 +12,19 @@ VISITED=1
 X=0
 Y=1
 
-
-
 class Maze:
 
     def __init__(self,height,width,GoalState=None,ActorState=(1,1)):
         self.theMaze=maze(height,width)
-        self.theMaze.CreateMaze(loopPercent=50)
-        self.Agent=Actor(self.theMaze,ActorState)
-        self.Size=(width,height)
         if GoalState==None:self.Goal=(height,width)
         else: self.Goal=GoalState
+        self.theMaze.CreateMaze(self.Goal[0],self.Goal[1],loopPercent=50)
+        self.Agent=Actor(self.theMaze,ActorState)
+        self.PathAgent = agent(self.theMaze, ActorState[0], ActorState[1], footprints = True, filled=True, color = 'red')
+        self.ExploredAgent = agent(self.theMaze, ActorState[0], ActorState[1], footprints = True, filled=True, color = 'green')
+
+        self.Size=(width,height)
+        
 
         self.Grid=[[UNVISITED for i in range(width+1)] for j in range(height+1)]
         
@@ -69,14 +71,13 @@ class Maze:
         if(not self.Goal or not self.Agent.State):
             print("ERROR: Set all your States first :)")
             exit()
-        self.Agent.theGUI.footprints=True
         if CostGrid:self.SearchFunction(Key,CostGrid)
         elif HKey and not SchedKey: self.SearchFunction(Key,HKey=HKey)
         elif SchedKey: self.SearchFunction(Key,HKey = HKey,SchedKey=SchedKey, Temp=Temp)
         else:self.SearchFunction(Key)
         self.theMaze.run()
 
-# Heuristic Functions Here
+    # Heuristic Functions Here
     def Manhatten(self):
             CostGrid=[]
             for i in range(self.Size[X]+1):
@@ -182,6 +183,7 @@ class Maze:
     def UCS(self,CostGrid=None):
         parent = {self.Agent.State: None}
         Queue=[(0,self.Agent.State)]
+        explored = []
         print("Begin")
         if(not CostGrid):
             print("ERROR: Chose UCS Search with no Cost Inserted :)")
@@ -190,6 +192,7 @@ class Maze:
         while Queue:
             CurrCost,CurrState=heappop(Queue)
             if CurrCost>self.Grid[CurrState[X]][CurrState[Y]]: continue
+            explored.append(CurrState)
             self.Agent.NowState(CurrState)
             for state in self.Agent.Actions(CurrState):
                 if CostGrid[state[X]][state[Y]]+self.Grid[CurrState[X]][CurrState[Y]]>=self.Grid[state[X]][state[Y]]: continue
@@ -200,8 +203,9 @@ class Maze:
         else:
             print("Path cost is ", self.Grid[self.Goal[X]][self.Goal[Y]])
             print("Path is ", self.Path(parent))
+            self.theMaze.tracePath({ self.ExploredAgent: explored}, delay = 10)
+            self.theMaze.tracePath({ self.PathAgent: self.Path(parent)}, delay = 10)
 
-            
     def BFS(self):
         Queue=deque()
         Queue.append(self.Agent.State)
@@ -227,6 +231,8 @@ class Maze:
             print("Path Length is ", self.Grid[self.Goal[X]][self.Goal[Y]])
             print("Explored nodes are ", explored)
             print("Path is ",self.Path(parent))
+            self.theMaze.tracePath({ self.ExploredAgent: explored}, delay = 10)
+            self.theMaze.tracePath({ self.PathAgent: self.Path(parent)}, delay = 10)
     
     def Greedy(self,HKey):
         CostGrid=self.HeuristicFunction(HKey)
@@ -268,6 +274,8 @@ class Maze:
                     break
         if CurrState == self.Goal:
             print("Path is ", self.Path(Parent))
+            self.theMaze.tracePath({ self.ExploredAgent: Explored}, delay = 10)
+            self.theMaze.tracePath({ self.PathAgent: self.Path(Parent)}, delay = 10)
         else:
             print("No Path to Goal :(")
 
