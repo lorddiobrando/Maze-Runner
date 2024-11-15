@@ -9,7 +9,7 @@ UNVISITED=oo
 VISITED=1
 X=0
 Y=1
-
+#
 class Maze:
 
     def __init__(self,width,height,GoalState=None,ActorState=(1,1)):
