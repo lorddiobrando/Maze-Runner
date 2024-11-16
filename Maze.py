@@ -208,8 +208,6 @@ class Maze:
             self.theMaze.tracePath({ self.ExploredAgent: explored}, delay = self.delay)
             self.theMaze.tracePath({ self.PathAgent: self.Path(parent)}, delay = self.delay)
 
-    def AStar(self,CostGrid,HKey):
-        pass
         
 
     def BFS(self):
@@ -241,9 +239,49 @@ class Maze:
             self.theMaze.tracePath({ self.PathAgent: self.Path(parent)}, delay = self.delay)
     
     def Greedy(self,HKey):
-        CostGrid=self.HeuristicFunction(HKey)
-        print(CostGrid)
-        self.SearchFunction('UCS',Cost=CostGrid)
+        h=self.HeuristicFunction(HKey)
+        parent = {self.Agent.State: None}
+        Queue=[(0,self.Agent.State)]
+        explored = []
+        if(not h):
+            print("ERROR: Chose Greedy Search with no heuristic Inserted :)")
+            exit()
+        while Queue:
+            _,CurrState=heappop(Queue)
+            if CurrState==self.Goal: break
+            self.Grid[CurrState[X]][CurrState[Y]]=VISITED
+            explored.append(CurrState)
+            for state in self.Agent.Actions(CurrState):
+                if self.Grid[state[X]][state[Y]]==VISITED: continue
+                parent[state] = CurrState
+                heappush(Queue,(h[state[X]][state[Y]],state))
+            # print("Path cost is ", self.Grid[self.Goal[X]][self.Goal[Y]])
+            # print("Path is ", self.Path(parent))
+        self.theMaze.tracePath({ self.ExploredAgent: explored}, delay = 10)
+        self.theMaze.tracePath({ self.PathAgent: self.Path(parent)}, delay = 10)
+    
+    def AStar(self,CostGrid,HKey):
+        h=self.HeuristicFunction(HKey)
+        parent = {self.Agent.State: None}
+        Queue=[(0,self.Agent.State)]
+        explored = []
+        if(not CostGrid or not h):
+            print("ERROR: Chose UCS Search with no Cost Inserted :)")
+            exit()
+        while Queue:
+            _,CurrState=heappop(Queue)
+            if CurrState==self.Goal: break
+            self.Grid[CurrState[X]][CurrState[Y]]=VISITED
+            explored.append(CurrState)
+            for state in self.Agent.Actions(CurrState):
+                if self.Grid[state[X]][state[Y]]==VISITED: continue
+                parent[state] = CurrState
+                heappush(Queue,(CostGrid[state[X]][state[Y]]+h[state[X]][state[Y]],state))
+            # print("Path cost is ", self.Grid[self.Goal[X]][self.Goal[Y]])
+            # print("Path is ", self.Path(parent))
+        self.theMaze.tracePath({ self.ExploredAgent: explored}, delay = 10)
+        self.theMaze.tracePath({ self.PathAgent: self.Path(parent)}, delay = 10)
+     
 
     def SimulatedAnnealing(self, Hkey, SchedKey, Temp = None):
         CurrState = self.Agent.State
@@ -402,3 +440,4 @@ class Maze:
 
 
 
+        
