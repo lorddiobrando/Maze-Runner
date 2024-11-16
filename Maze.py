@@ -5,6 +5,7 @@ from heapq import heappop,heappush
 import sys
 import random
 import math
+import numpy as np
 
 oo=sys.maxsize
 UNVISITED=oo
@@ -33,7 +34,8 @@ class Maze:
             'GREEDY':self.Greedy,
             'SA':self.SimulatedAnnealing,
             'ASTAR':self.AStar,
-            'HC':self.HillClimbing
+            'HC':self.HillClimbing,
+            'GA':self.GeneticSearch
         }
 
         self.HFunctions={
@@ -53,11 +55,12 @@ class Maze:
             path.reverse()
             return path
 
-    def SearchFunction(self,Key,Cost=None,HKey=None, SchedKey=None, Temp=None):
+    def SearchFunction(self,Key, pop_size = None, iterations = 10000,Cost=None,HKey=None, SchedKey=None, Temp=None):
         if Cost and not HKey: self.Functions[Key.upper()](Cost)
         elif HKey and not SchedKey and not Cost: self.Functions[Key.upper()](HKey)
         elif HKey and Cost: self.Functions[Key.upper()](Cost,HKey)
         elif SchedKey: self.Functions[Key.upper()](HKey,SchedKey)
+        elif pop_size: self.Functions[Key.upper()](pop_size, iterations)
         else: self.Functions[Key.upper()]()
 
     def HeuristicFunction(self,Key):
@@ -66,7 +69,7 @@ class Maze:
     def ScheduleFunction(self,Key,Temp):
         return self.SchedFunctions[Key.upper()](Temp)
     
-    def Start(self,Key,CostGrid = None,HKey=None,SchedKey=None, Temp= None):
+    def Start(self,Key, pop_size = None, iterations = 10000, CostGrid = None,HKey=None,SchedKey=None, Temp= None):
         if(not self.Goal or not self.Agent.State):
             print("ERROR: Set all your States first :)")
             exit()
@@ -74,6 +77,7 @@ class Maze:
         elif HKey and not SchedKey and not CostGrid: self.SearchFunction(Key,HKey=HKey)
         elif HKey and CostGrid: self.SearchFunction(Key,HKey=HKey,Cost=CostGrid)
         elif SchedKey: self.SearchFunction(Key,HKey = HKey,SchedKey=SchedKey, Temp=Temp)
+        elif pop_size: self.SearchFunction(Key, pop_size, iterations)
         else:self.SearchFunction(Key)
         self.theMaze.run()
 
@@ -286,11 +290,93 @@ class Maze:
         print("Path is ", path)
         self.theMaze.tracePath({self.ExploredAgent: path}, delay=10)
         
+    def __InitialisePopulation(self, pop_size):
+        height_length = len(str(len(self.Grid) - 1))
+        width_length = len(str(len(self.Grid[0]) - 1))
+
+        pop = list()
+        for i in range(pop_size):
+            chromosome = str()
+            for num in np.random.choice(range(0, 10), height_length):
+                chromosome += str(num)
+
+            for num in np.random.choice(range(0, 10), width_length):
+                chromosome += str(num)
+
+            pop.append(chromosome)
+        return pop
+
+    def __Fitness(self, pop):
+        fitness_vals = list()
+        encoded_goal = str(self.Goal[0]) + str(self.Goal[1])
+
+        for chromosome in pop:
+            fitness = sum([9 - abs(int(chromosome[i]) - int(encoded_goal[i])) for i in range(len(encoded_goal))])
+            # fitness = sum([1 if chromosome[i] == encoded_goal[i] else 0 for i in range(len(encoded_goal))])
+            fitness_vals.append(fitness)
+
+        prop = list()
+        den = sum(fitness_vals)
+        if den:
+            for i in range(len(fitness_vals)):
+                prop.append(fitness_vals[i] / den)
+        else:
+            for i in range(len(fitness_vals)):
+                prop.append(0)
+
+        rem = 1 - sum(prop)
+        rem /= len(prop)
+
+        for i in range(len(fitness_vals)):
+            prop[i] += rem
+        return prop
+
+    def __Reproduce(self, x, y):
+        toggle = 0
+        offspring = str()
+        for i in range(len(x)):
+            if (toggle % 2) == 0:
+                offspring += x[i]
+            else:
+                offspring += y[i]
+            toggle += 1
+        return offspring
+
+    def __Mutate(self, offspring, prop = 0.2):
+        mutations = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
+        index = np.random.choice(range(len(offspring)), 1)[0]
+
+        temp = list(offspring)
+        if np.random.random() < prop:
+            temp[index] = np.random.choice(mutations, 1)[0]
+            offspring = ''.join(temp)
+
+        return offspring
 
 
-
-        
-
+    def GeneticSearch(self, pop_size, iterations):
+        pop = self.__InitialisePopulation(pop_size)
+        encoded_goal = str(self.Goal[0]) + str(self.Goal[1])
+        generation = 1
+        while iterations:
+            print('Generation:', generation)
+            print(pop)
+            generation += 1
+            if encoded_goal in pop:
+                print('success')
+                return
+            new_pop = list()
+            prop = self.__Fitness(pop)
+            while len(new_pop) < pop_size:
+                x = str(np.random.choice(pop, 1, prop)[0])
+                y = str(np.random.choice(pop, 1, prop)[0])
+                offspring = self.__Reproduce(x, y)
+                offspring = self.__Mutate(offspring, 0.1)
+                new_pop.append(offspring)
+            pop = new_pop
+            iterations -= 1
+        print('failure')
+        return
 
 
 
