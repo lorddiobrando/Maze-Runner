@@ -18,7 +18,7 @@ class Maze:
         self.theMaze=maze(height,width)
         if GoalState==None:self.Goal=(height,width)
         else: self.Goal=GoalState
-        self.theMaze.CreateMaze(self.Goal[0],self.Goal[1],loopPercent=50)
+        self.theMaze.CreateMaze(self.Goal[0],self.Goal[1],loopPercent=40)
         self.Agent=Actor(self.theMaze,ActorState)
         self.PathAgent = agent(self.theMaze, ActorState[0], ActorState[1], footprints = True, filled=True, color = 'red')
         self.ExploredAgent = agent(self.theMaze, ActorState[0], ActorState[1], footprints = True, filled=True, color = 'green')
@@ -34,7 +34,8 @@ class Maze:
             'IDS':self.IDS,
             'DFS':self.DFS,
             'GREEDY':self.Greedy,
-            'SA':self.SimulatedAnnealing
+            'SA':self.SimulatedAnnealing,
+            'A*':self.AStar
         }
 
         self.HFunctions={
@@ -56,7 +57,8 @@ class Maze:
             return path
 
     def SearchFunction(self,Key,Cost=None,HKey=None, SchedKey=None, Temp=None):
-        if Cost: self.Functions[Key.upper()](Cost)
+        if Cost and not HKey: self.Functions[Key.upper()](Cost)
+        elif Cost and HKey: self.Functions[Key.upper()](Cost,HKey)
         elif HKey and not SchedKey: self.Functions[Key.upper()](HKey)
         elif SchedKey: self.Functions[Key.upper()](Temp,HKey,SchedKey)
         else: self.Functions[Key.upper()]()
@@ -71,7 +73,8 @@ class Maze:
         if(not self.Goal or not self.Agent.State):
             print("ERROR: Set all your States first :)")
             exit()
-        if CostGrid:self.SearchFunction(Key,CostGrid)
+        if CostGrid and not HKey:self.SearchFunction(Key,CostGrid)
+        elif CostGrid and HKey:self.SearchFunction(Key,CostGrid,HKey)
         elif HKey and not SchedKey: self.SearchFunction(Key,HKey=HKey)
         elif SchedKey: self.SearchFunction(Key,HKey = HKey,SchedKey=SchedKey, Temp=Temp)
         else:self.SearchFunction(Key)
@@ -92,7 +95,7 @@ class Maze:
             for i in range(self.Size[X]+1):
                 row=[]
                 for j in range(self.Size[Y]+1):
-                    row.append(sqrt((self.Goal[Y]-j)**2+abs(self.Goal[X]-i)**2))
+                    row.append(math.sqrt((self.Goal[Y]-j)**2+abs(self.Goal[X]-i)**2))
                 CostGrid.append(row)
             return CostGrid 
 
@@ -235,17 +238,51 @@ class Maze:
             self.theMaze.tracePath({ self.PathAgent: self.Path(parent)}, delay = 10)
     
     def Greedy(self,HKey):
-        CostGrid=self.HeuristicFunction(HKey)
-        print(CostGrid)
-        self.SearchFunction('UCS',CostGrid)
+        h=self.HeuristicFunction(HKey)
+        parent = {self.Agent.State: None}
+        Queue=[(0,self.Agent.State)]
+        explored = []
+        if(not h):
+            print("ERROR: Chose Greedy Search with no heuristic Inserted :)")
+            exit()
+        while Queue:
+            _,CurrState=heappop(Queue)
+            if CurrState==self.Goal: break
+            self.Grid[CurrState[X]][CurrState[Y]]=VISITED
+            explored.append(CurrState)
+            for state in self.Agent.Actions(CurrState):
+                if self.Grid[state[X]][state[Y]]==VISITED: continue
+                parent[state] = CurrState
+                heappush(Queue,(h[state[X]][state[Y]],state))
+            # print("Path cost is ", self.Grid[self.Goal[X]][self.Goal[Y]])
+            # print("Path is ", self.Path(parent))
+        self.theMaze.tracePath({ self.ExploredAgent: explored}, delay = 10)
+        self.theMaze.tracePath({ self.PathAgent: self.Path(parent)}, delay = 10)
     
     def AStar(self,CostGrid,HKey):
-        temp=self.HeuristicFunction(HKEY)
-        for i in range(len(CostGrid)):
-            for j in range(len(CostGrid[0])):
-                CostGrid[i][j]+=temp[i][j]
-        self.UCS(CostGrid)
+        h=self.HeuristicFunction(HKey)
+        parent = {self.Agent.State: None}
+        Queue=[(0,self.Agent.State)]
+        explored = []
+        if(not CostGrid or not h):
+            print("ERROR: Chose UCS Search with no Cost Inserted :)")
+            exit()
+        while Queue:
+            _,CurrState=heappop(Queue)
+            if CurrState==self.Goal: break
+            self.Grid[CurrState[X]][CurrState[Y]]=VISITED
+            explored.append(CurrState)
+            for state in self.Agent.Actions(CurrState):
+                if self.Grid[state[X]][state[Y]]==VISITED: continue
+                parent[state] = CurrState
+                heappush(Queue,(CostGrid[state[X]][state[Y]]+h[state[X]][state[Y]],state))
+            # print("Path cost is ", self.Grid[self.Goal[X]][self.Goal[Y]])
+            # print("Path is ", self.Path(parent))
+        self.theMaze.tracePath({ self.ExploredAgent: explored}, delay = 10)
+        self.theMaze.tracePath({ self.PathAgent: self.Path(parent)}, delay = 10)
 
+
+     
     def SimulatedAnnealing(self, Temp, Hkey, SchedKey):
         CurrState = self.Agent.State
         Parent = {self.Agent.State: None}
