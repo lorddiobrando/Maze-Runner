@@ -6,7 +6,7 @@ import sys
 import random
 import math
 import numpy as np
-
+import time
 oo=sys.maxsize
 UNVISITED=oo
 VISITED=1
@@ -56,13 +56,14 @@ class Maze:
             path.reverse()
             return path
 
-    def SearchFunction(self,Key, pop_size = None, iterations = 10000,Cost=None,HKey=None, SchedKey=None, Temp=None):
-        if Cost and not HKey: self.Functions[Key.upper()](Cost)
-        elif HKey and not SchedKey and not Cost: self.Functions[Key.upper()](HKey)
-        elif HKey and Cost: self.Functions[Key.upper()](Cost,HKey)
+    def Start(self,Key, pop_size = None, iterations = 10000,CostGrid=None,HKey=None, SchedKey=None, Temp=None):
+        if CostGrid and not HKey: self.Functions[Key.upper()](CostGrid)
+        elif HKey and not SchedKey and not CostGrid: self.Functions[Key.upper()](HKey)
+        elif HKey and CostGrid: self.Functions[Key.upper()](CostGrid,HKey)
         elif SchedKey: self.Functions[Key.upper()](HKey,SchedKey)
         elif pop_size: self.Functions[Key.upper()](pop_size, iterations)
         else: self.Functions[Key.upper()]()
+        self.theMaze.run()
 
     def HeuristicFunction(self,Key):
         return self.HFunctions[Key.upper()]()
@@ -70,17 +71,17 @@ class Maze:
     def ScheduleFunction(self,Key,Temp):
         return self.SchedFunctions[Key.upper()](Temp)
     
-    def Start(self,Key, pop_size = None, iterations = 10000, CostGrid = None,HKey=None,SchedKey=None, Temp= None):
-        if(not self.Goal or not self.Agent.State):
-            print("ERROR: Set all your States first :)")
-            exit()
-        if CostGrid and not HKey:self.SearchFunction(Key, Cost = CostGrid)
-        elif HKey and not SchedKey and not CostGrid: self.SearchFunction(Key,HKey=HKey)
-        elif HKey and CostGrid: self.SearchFunction(Key,HKey=HKey,Cost=CostGrid)
-        elif SchedKey: self.SearchFunction(Key,HKey = HKey,SchedKey=SchedKey, Temp=Temp)
-        elif pop_size: self.SearchFunction(Key,pop_size = pop_size,iterations = iterations)
-        else:self.SearchFunction(Key)
-        self.theMaze.run()
+    # def Start(self,Key, pop_size = None, iterations = 10000, CostGrid = None,HKey=None,SchedKey=None, Temp= None):
+    #     if(not self.Goal or not self.Agent.State):
+    #         print("ERROR: Set all your States first :)")
+    #         exit()
+    #     if CostGrid and not HKey:self.SearchFunction(Key, Cost = CostGrid)
+    #     elif HKey and not SchedKey and not CostGrid: self.SearchFunction(Key,HKey=HKey)
+    #     elif HKey and CostGrid: self.SearchFunction(Key,HKey=HKey,Cost=CostGrid)
+    #     elif SchedKey: self.SearchFunction(Key,HKey = HKey,SchedKey=SchedKey, Temp=Temp)
+    #     elif pop_size: self.SearchFunction(Key,pop_size = pop_size,iterations = iterations)
+    #     else:self.SearchFunction(Key)
+    #     self.theMaze.run()
 
     # Heuristic Functions Here
     def Manhatten(self):
@@ -239,6 +240,7 @@ class Maze:
             self.theMaze.tracePath({ self.PathAgent: self.Path(parent)}, delay = self.delay)
     
     def Greedy(self,HKey):
+        start=time.time()
         h=self.HeuristicFunction(HKey)
         parent = {self.Agent.State: None}
         Queue=[(0,self.Agent.State)]
@@ -257,10 +259,15 @@ class Maze:
                 heappush(Queue,(h[state[X]][state[Y]],state))
             # print("Path cost is ", self.Grid[self.Goal[X]][self.Goal[Y]])
             # print("Path is ", self.Path(parent))
+        finish=time.time()
+        print(finish," - ",time.time())
+        print("Time taken: ",(finish-start)*1e6," Microseconds")
+        print("Explored nodes are ", len(explored))
         self.theMaze.tracePath({ self.ExploredAgent: explored}, delay = 10)
         self.theMaze.tracePath({ self.PathAgent: self.Path(parent)}, delay = 10)
     
     def AStar(self,CostGrid,HKey):
+        start=time.time()
         h=self.HeuristicFunction(HKey)
         parent = {self.Agent.State: None}
         Queue=[(0,self.Agent.State)]
@@ -279,6 +286,10 @@ class Maze:
                 heappush(Queue,(CostGrid[state[X]][state[Y]]+h[state[X]][state[Y]],state))
             # print("Path cost is ", self.Grid[self.Goal[X]][self.Goal[Y]])
             # print("Path is ", self.Path(parent))
+        finish=time.time()
+        print(finish," - ",time.time())
+        print("Time taken: ",(finish-start)*1e6," Microseconds")
+        print("Explored nodes are ", len(explored))
         self.theMaze.tracePath({ self.ExploredAgent: explored}, delay = 10)
         self.theMaze.tracePath({ self.PathAgent: self.Path(parent)}, delay = 10)
      
