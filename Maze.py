@@ -3,6 +3,7 @@ from pyamaze import maze
 from collections import deque
 from heapq import heappop,heappush
 import sys
+import csv
 import random
 import math
 import numpy as np
@@ -496,7 +497,15 @@ class Maze:
                         state = action
                     else:
                         print(f"Path at episode {episode}:", temp_path)
-                        self.theMaze.tracePath({self.ExploredAgent: temp_path}, delay=self.delay)
+                        
+                    with open('mid_Q_table.csv', 'w', newline='') as csvfile:
+                        fieldnames = ['State', 'Action', 'Value']
+                        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+                        writer.writeheader()
+                        for state, actions in Q.items():
+                            for action, value in actions.items():
+                                writer.writerow({'State': state, 'Action': action, 'Value': value})
+                    self.theMaze.tracePath({self.ExploredAgent: temp_path}, delay=self.delay)
 
         path = []
         state = (1, 1)
@@ -512,4 +521,12 @@ class Maze:
 
         print("Q Table:", Q)
         print("Path:", path)
+        with open('Q_table.csv', 'w', newline='') as csvfile:
+            fieldnames = ['State', 'Action', 'Value']
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            writer.writeheader()
+            for state, actions in Q.items():
+                for action, value in actions.items():
+                    writer.writerow({'State': state, 'Action': action, 'Value': value})
+
         self.theMaze.tracePath({self.PathAgent: path}, delay=self.delay)
