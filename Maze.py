@@ -447,11 +447,6 @@ class Maze:
         print('failure')
         return
         
-    # def __epsilonGreedy(self, Q, state, epsilon):
-    #     if random.uniform(0, 1) < epsilon:
-    #         return random.choice(list(Q[state].keys()))
-    #     else:
-    #         return max(Q[state], key=Q[state].get)
 
     def ReinforcementLearning(self, episodes=5000, alpha=0.1, gamma=0.9, epsilon=0.7):
         Q = {}
@@ -459,16 +454,13 @@ class Maze:
             for y in range(1, self.Size[1] + 1):
                 state = (x, y)
                 Q[state] = {action: 0 for action in self.Agent.Actions(state)}
-
         rewards = []
         for episode in range(episodes):
             self.Agent.NowState((1, 1))
             state = self.Agent.State
             total_reward = 0
             steps = 0
-
             while state != self.Goal and steps < 1000:
-                # action = __epsilonGreedy(Q, state, epsilon)
                 if random.uniform(0, 1) < epsilon:
                     action = random.choice(list(Q[state].keys()))
                 else:   
@@ -488,16 +480,36 @@ class Maze:
             rewards.append(total_reward)
             if episode % 100 == 0:
                 print(f"Episode {episode}/{episodes}, Total Reward: {total_reward}, Epsilon: {epsilon:}")
+            if episode == episodes//2:
+                    print(f"Q at {episode}:", Q)
+                    temp_path = []
+                    state = (1, 1)
+                    visited_states = set()
+                    while state != self.Goal:
+                        if state not in Q or not Q[state] or state in visited_states:
+                            self.theMaze.tracePath({self.ExploredAgent: temp_path}, delay=self.delay)
+                            print("No Path to Goal :(")
+                            break
+                        action = max(Q[state], key=Q[state].get)
+                        temp_path.append(action)
+                        visited_states.add(state)
+                        state = action
+                    else:
+                        print(f"Path at episode {episode}:", temp_path)
+                        self.theMaze.tracePath({self.ExploredAgent: temp_path}, delay=self.delay)
 
         path = []
         state = (1, 1)
+        visited_states = set()
         while state != self.Goal:
-            if state not in Q or not Q[state]:
+            if state not in Q or not Q[state] or state in visited_states:
+                print("No Path to Goal :(")
                 break
             action = max(Q[state], key=Q[state].get)
             path.append(action)
+            visited_states.add(state)
             state = action
 
-        # print("Q Table:", Q)
+        print("Q Table:", Q)
         print("Path:", path)
         self.theMaze.tracePath({self.PathAgent: path}, delay=self.delay)
