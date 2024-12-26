@@ -35,7 +35,8 @@ class Maze:
             'SA':self.SimulatedAnnealing,
             'ASTAR':self.AStar,
             'HC':self.HillClimbing,
-            'GA':self.GeneticSearch
+            'GA':self.GeneticSearch,
+            'RL':self.ReinforcementLearning
         }
 
         self.HFunctions={
@@ -56,13 +57,20 @@ class Maze:
             path.reverse()
             return path
 
-    def Start(self,Key, pop_size = None, iterations = 10000,CostGrid=None,HKey=None, SchedKey=None, Temp=None):
-        if CostGrid and not HKey: self.Functions[Key.upper()](CostGrid)
+    def Start(self, Key, pop_size=None, iterations=10000, CostGrid=None, HKey=None, SchedKey=None, Temp=None, alpha=None, gamma=None, epsilon=None, episodes=None):
+        if Key.upper() == 'RL':
+            episodes = episodes or 5000
+            alpha = alpha or 0.1
+            gamma = gamma or 0.9
+            epsilon = epsilon or 0.7
+            self.Functions[Key.upper()](episodes, alpha, gamma, epsilon)
+        elif CostGrid and not HKey: self.Functions[Key.upper()](CostGrid)
         elif HKey and not SchedKey and not CostGrid: self.Functions[Key.upper()](HKey)
         elif HKey and CostGrid: self.Functions[Key.upper()](CostGrid,HKey)
         elif SchedKey: self.Functions[Key.upper()](HKey,SchedKey)
         elif pop_size: self.Functions[Key.upper()](pop_size, iterations)
         else: self.Functions[Key.upper()]()
+        self.theMaze.run()
         self.theMaze.run()
 
     def HeuristicFunction(self,Key):
@@ -93,6 +101,7 @@ class Maze:
                 CostGrid.append(row)
             return CostGrid 
 
+
     def Eucledian(self):
             CostGrid=[]
             for i in range(self.Size[X]+1):
@@ -101,7 +110,6 @@ class Maze:
                     row.append(math.sqrt((self.Goal[Y]-j)**2+abs(self.Goal[X]-i)**2))
                 CostGrid.append(row)
             return CostGrid 
-
            
     
    # Schedueling Functions Here
@@ -438,17 +446,58 @@ class Maze:
             iterations -= 1
         print('failure')
         return
-
-
-
         
-        
-        
+    # def __epsilonGreedy(self, Q, state, epsilon):
+    #     if random.uniform(0, 1) < epsilon:
+    #         return random.choice(list(Q[state].keys()))
+    #     else:
+    #         return max(Q[state], key=Q[state].get)
 
+    def ReinforcementLearning(self, episodes=5000, alpha=0.1, gamma=0.9, epsilon=0.7):
+        Q = {}
+        for x in range(1, self.Size[0] + 1):
+            for y in range(1, self.Size[1] + 1):
+                state = (x, y)
+                Q[state] = {action: 0 for action in self.Agent.Actions(state)}
 
-        
+        rewards = []
+        for episode in range(episodes):
+            self.Agent.NowState((1, 1))
+            state = self.Agent.State
+            total_reward = 0
+            steps = 0
 
+            while state != self.Goal and steps < 1000:
+                # action = __epsilonGreedy(Q, state, epsilon)
+                if random.uniform(0, 1) < epsilon:
+                    action = random.choice(list(Q[state].keys()))
+                else:   
+                    action = max(Q[state], key=Q[state].get)
+                next_state = action
+                reward = 100 if state == self.Goal else -1
+                if next_state not in Q:
+                    Q[next_state] = {a: 0 for a in self.Agent.Actions(next_state)}
 
+                max_next_q = max(Q[next_state].values()) if Q[next_state] else 0
+                Q[state][next_state] += alpha * (reward + gamma * max_next_q - Q[state][next_state])
 
+                self.Agent.NowState(next_state)
+                state = next_state
+                total_reward += reward
+                steps += 1
+            rewards.append(total_reward)
+            if episode % 100 == 0:
+                print(f"Episode {episode}/{episodes}, Total Reward: {total_reward}, Epsilon: {epsilon:}")
 
-        
+        path = []
+        state = (1, 1)
+        while state != self.Goal:
+            if state not in Q or not Q[state]:
+                break
+            action = max(Q[state], key=Q[state].get)
+            path.append(action)
+            state = action
+
+        # print("Q Table:", Q)
+        print("Path:", path)
+        self.theMaze.tracePath({self.PathAgent: path}, delay=self.delay)
