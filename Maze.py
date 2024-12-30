@@ -467,10 +467,7 @@ class Maze:
                 else:   
                     action = max(Q[state], key=Q[state].get)
                 next_state = action
-                reward = 100 if state == self.Goal else -1
-                if next_state not in Q:
-                    Q[next_state] = {a: 0 for a in self.Agent.Actions(next_state)}
-
+                reward = 100 if next_state == self.Goal else -1
                 max_next_q = max(Q[next_state].values()) if Q[next_state] else 0
                 Q[state][next_state] += alpha * (reward + gamma * max_next_q - Q[state][next_state])
 
