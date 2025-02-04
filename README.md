@@ -28,5 +28,5 @@ Authors:
 
   - ALhussaein Shalaby (https://github.com/alhusseain)
   - Amr Khalid
-  - Mohammed Tag
-  - Seif Zaki
+  - Mohammed Tag (https://github.com/mohamedtag04)
+  - Seif Zaki (https://github.com/seif-356)
