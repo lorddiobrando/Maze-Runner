@@ -27,6 +27,6 @@ Reinforcement Learning:
 Authors:
 
   - ALhussaein Shalaby (https://github.com/alhusseain)
-  - Amr Khalid
+  - Amr Khalid (https://github.com/lorddiobrando)
   - Mohammed Tag (https://github.com/mohamedtag04)
   - Seif Zaki (https://github.com/seif-356)
